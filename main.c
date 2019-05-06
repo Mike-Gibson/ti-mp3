@@ -1,5 +1,6 @@
 
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_ints.h"
@@ -62,7 +63,25 @@ UARTIntHandler(void)
                 UARTSend_1(0x01, 1); // TEMP - get feedback?
                 UARTSend_1(0x00, 1);
                 UARTSend_1(0x02, 1);
-                UARTSend_1(0xFFDD, 2);
+                // UARTSend_1(0xFFDD, 2); NOT NEEDED?
+                UARTSend_1(0xEF, 1);
+
+                break;
+
+            case 'p'  :
+                UARTSend((uint8_t *)"\r\nPlaying...", 12);
+
+                // http://www.electronicoscaldas.com/datasheet/DFR0299-DFPlayer-Mini-Manual.pdf
+                // $S VER Len CMD Feedback para1 para2 checksum $O
+                // 7E FF  06  0D  00       00    00    ?? ??    EF
+                UARTSend_1(0x7E, 1);
+                UARTSend_1(0xFF, 1);
+                UARTSend_1(0x06, 1);
+                UARTSend_1(0x0D, 1);
+                UARTSend_1(0x01, 1); // TEMP - get feedback?
+                UARTSend_1(0x00, 1);
+                UARTSend_1(0x00, 1);
+                // UARTSend_1(0x????, 2); NOT NEEDED?
                 UARTSend_1(0xEF, 1);
 
                 break;
@@ -112,6 +131,24 @@ UART1IntHandler(void)
     // Clear the asserted interrupts.
     //
     ROM_UARTIntClear(UART1_BASE, ui32Status);
+
+    UARTSend((uint8_t *)"\r\nReceived: ", 12);
+
+    while(ROM_UARTCharsAvail(UART1_BASE))
+    {
+        //
+        // Read the next character from the UART.
+        //
+        uint8_t a = ROM_UARTCharGetNonBlocking(UART1_BASE);
+//
+//        // Format as hex
+//        char b[20];
+//        //sprintf(b, "%02X", a);
+        // ABOVE BROKEN. STACK SIZE?
+
+        // Echo back to UART 0
+        UARTSend(a, 1);
+    }
 }
 
 //*****************************************************************************
@@ -241,8 +278,8 @@ int main(void)
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
-    //ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
-    //ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
 
     //
     // Enable processor interrupts.
@@ -257,11 +294,11 @@ int main(void)
     ROM_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
     //
-    // Set GPIO B0 and B1 as UART pins.
+    // Set GPIO PB0 and PB1 as UART pins.
     //
-    //GPIOPinConfigure(GPIO_PB0_U1RX);
-    //GPIOPinConfigure(GPIO_PB1_U1TX);
-    //ROM_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+    GPIOPinConfigure(GPIO_PB0_U1RX);
+    GPIOPinConfigure(GPIO_PB1_U1TX);
+    ROM_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
     //
     // Configure the UART0 for 115,200, 8-N-1 operation.
@@ -270,14 +307,12 @@ int main(void)
                             (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
                              UART_CONFIG_PAR_NONE));
 
-
-
     //
     // Configure the UART1 for 9600,  8-N-1 operation.
     //
-//    ROM_UARTConfigSetExpClk(UART1_BASE, ROM_SysCtlClockGet(), 9600,
-//                            (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-//                             UART_CONFIG_PAR_NONE));
+    ROM_UARTConfigSetExpClk(UART1_BASE, ROM_SysCtlClockGet(), 9600,
+                            (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                             UART_CONFIG_PAR_NONE));
 
 
     //
@@ -286,8 +321,8 @@ int main(void)
     ROM_IntEnable(INT_UART0);
     ROM_UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
 
-//    ROM_IntEnable(INT_UART1);
-//    ROM_UARTIntEnable(UART1_BASE, UART_INT_RX | UART_INT_RT);
+    ROM_IntEnable(INT_UART1);
+    ROM_UARTIntEnable(UART1_BASE, UART_INT_RX | UART_INT_RT);
 
     //
     // Prompt for text to be entered.
