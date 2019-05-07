@@ -104,6 +104,20 @@ UARTIntHandler(void)
 
                 break;
 
+            case 'n'  :
+               UARTSend((uint8_t *)"\r\nNext...", 9);
+
+               UARTSend_1(0x7E);
+               UARTSend_1(0xFF);
+               UARTSend_1(0x06);
+               UARTSend_1(0x01);
+               UARTSend_1(0x01); // TEMP - get feedback?
+               UARTSend_1(0x00);
+               UARTSend_1(0x00);
+               UARTSend_1(0xEF);
+
+               break;
+
             case 's'  :
                UARTSend((uint8_t *)"\r\nStopping...", 13);
 
@@ -183,22 +197,46 @@ UART1IntHandler(void)
     //
     ROM_UARTIntClear(UART1_BASE, ui32Status);
 
-    UARTSend((uint8_t *)"\r\nReceived: ", 12);
+    bool haveWrittenHeader = false;
 
     while(ROM_UARTCharsAvail(UART1_BASE))
     {
+        if (!haveWrittenHeader) {
+            UARTSend((uint8_t *)"\r\nReceived: ", 12);
+            haveWrittenHeader = true;
+        }
+
         //
         // Read the next character from the UART.
         //
         uint8_t a = ROM_UARTCharGetNonBlocking(UART1_BASE);
-//
-//        // Format as hex
-//        char b[20];
-//        //sprintf(b, "%02X", a);
-        // ABOVE BROKEN. STACK SIZE?
+
+        char asHexString[2];
+        ConvertByteToHexString(a, asHexString);
 
         // Echo back to UART 0
-        UARTSend(a, 1);
+        UARTSend(asHexString, 2);
+        UARTSend((uint8_t *)" ", 1);
+    }
+}
+
+void ConvertByteToHexString(uint8_t input, uint8_t *output) {
+    output[0] = 0;
+    output[1] = 1;
+    int i;
+    for (i = 0; i < 2; i++) {
+        output[1 - i] = input % 16;
+        input /= 16;
+
+        if (input == 0)
+            break;
+    }
+
+    for (i = 0; i < 2; i++) {
+        if (output[i] < 10)
+            output[i] += '0';
+        else
+            output[i] += 'A' - 10;
     }
 }
 
