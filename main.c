@@ -151,6 +151,29 @@ UARTIntHandler(void)
 
                break;
 
+            case 'q'  :
+               UARTSend((uint8_t *)"\r\nQuery...", 10);
+
+               UARTSend_1(0x7E);
+               UARTSend_1(0xFF);
+               UARTSend_1(0x06);
+               UARTSend_1(0x47);
+               UARTSend_1(0x00); // TEMP - get feedback?
+               UARTSend_1(0x00);
+               UARTSend_1(0x00);
+               UARTSend_1(0xEF);
+
+               break;
+
+            case 'z'  :
+               UARTSend((uint8_t *)"\r\nTESTING...", 12);
+
+//               UARTSend_1(0x7E);
+               UARTSend_1(0x05);
+//               UARTSend_1(0xEF);
+
+               break;
+
             default:
                 UARTSend((uint8_t *)"\r\nUnrecognised command...", 25);
                 break;
