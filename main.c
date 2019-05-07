@@ -56,35 +56,86 @@ UARTIntHandler(void)
                 // http://www.electronicoscaldas.com/datasheet/DFR0299-DFPlayer-Mini-Manual.pdf
                 // $S VER Len CMD Feedback para1 para2 checksum $O
                 // 7E FF  06  09  00       00    02    FF DD    EF
-                UARTSend_1(0x7E, 1);
-                UARTSend_1(0xFF, 1);
-                UARTSend_1(0x06, 1);
-                UARTSend_1(0x09, 1);
-                UARTSend_1(0x01, 1); // TEMP - get feedback?
-                UARTSend_1(0x00, 1);
-                UARTSend_1(0x02, 1);
-                // UARTSend_1(0xFFDD, 2); NOT NEEDED?
-                UARTSend_1(0xEF, 1);
+                UARTSend_1(0x7E);
+                UARTSend_1(0xFF);
+                UARTSend_1(0x06);
+                UARTSend_1(0x09);
+                UARTSend_1(0x01); // TEMP - get feedback?
+                UARTSend_1(0x00);
+                UARTSend_1(0x02);
+                // 0 - VER - Len - CMD - Feedback - para1 - para2
+//                UARTSend_1(0xFE);  // NOT NEEDED?
+//                UARTSend_1(0xFF);  // NOT NEEDED?
+                UARTSend_1(0xEF);
 
                 break;
 
             case 'p'  :
                 UARTSend((uint8_t *)"\r\nPlaying...", 12);
 
+//                // http://www.electronicoscaldas.com/datasheet/DFR0299-DFPlayer-Mini-Manual.pdf
+//                // $S VER Len CMD Feedback para1 para2 checksum $O
+//                // 7E FF  06  0D  00       00    00    ?? ??    EF
+                UARTSend_1(0x7E);
+                UARTSend_1(0xFF);
+                UARTSend_1(0x06);
+                UARTSend_1(0x0D);
+                UARTSend_1(0x01); // TEMP - get feedback?
+                UARTSend_1(0x00);
+                UARTSend_1(0x00);
+                // UARTSend_1(0x????, 2); NOT NEEDED?
+                UARTSend_1(0xEF);
+
+                // Play 01/001.mp3
+                //
                 // http://www.electronicoscaldas.com/datasheet/DFR0299-DFPlayer-Mini-Manual.pdf
                 // $S VER Len CMD Feedback para1 para2 checksum $O
-                // 7E FF  06  0D  00       00    00    ?? ??    EF
-                UARTSend_1(0x7E, 1);
-                UARTSend_1(0xFF, 1);
-                UARTSend_1(0x06, 1);
-                UARTSend_1(0x0D, 1);
-                UARTSend_1(0x01, 1); // TEMP - get feedback?
-                UARTSend_1(0x00, 1);
-                UARTSend_1(0x00, 1);
-                // UARTSend_1(0x????, 2); NOT NEEDED?
-                UARTSend_1(0xEF, 1);
+                // 7E FF  06  0F  00       01    01    xx xx    EF
+//                UARTSend_1(0x7E);
+//                UARTSend_1(0xFF);
+//                UARTSend_1(0x06);
+//                UARTSend_1(0x0F);
+//                UARTSend_1(0x01); // TEMP - get feedback?
+//                UARTSend_1(0x01);
+//                UARTSend_1(0x01);
+//                UARTSend_1(0xFE);  // NOT NEEDED?
+//                UARTSend_1(0xE9);  // NOT NEEDED?
+//                UARTSend_1(0xEF);
 
                 break;
+
+            case 's'  :
+               UARTSend((uint8_t *)"\r\nStopping...", 13);
+
+               // http://www.electronicoscaldas.com/datasheet/DFR0299-DFPlayer-Mini-Manual.pdf
+               // $S VER Len CMD Feedback para1 para2 checksum $O
+               // 7E FF  06  0E  00       00    00    xx xx    EF
+               UARTSend_1(0x7E);
+               UARTSend_1(0xFF);
+               UARTSend_1(0x06);
+               UARTSend_1(0x0E);
+               UARTSend_1(0x01); // TEMP - get feedback?
+               UARTSend_1(0x00);
+               UARTSend_1(0x00);
+               UARTSend_1(0xFE);  // NOT NEEDED?
+               UARTSend_1(0xEC);  // NOT NEEDED?
+               UARTSend_1(0xEF);
+
+               break;
+
+            case 'v'  :
+               UARTSend((uint8_t *)"\r\nVolume...", 11);
+
+               UARTSend_1(0x7E);
+               UARTSend_1(0xFF);
+               UARTSend_1(0x06);
+               UARTSend_1(0x06);
+               UARTSend_1(0x01); // TEMP - get feedback?
+               UARTSend_1(0x00);
+               UARTSend_1(0x1E);
+               UARTSend_1(0xEF);
+
+               break;
 
             default:
                 UARTSend((uint8_t *)"\r\nUnrecognised command...", 25);
@@ -179,17 +230,17 @@ UARTSend(const uint8_t *pui8Buffer, uint32_t ui32Count)
 //
 //*****************************************************************************
 void
-UARTSend_1(const uint8_t *pui8Buffer, uint32_t ui32Count)
+UARTSend_1(const uint8_t c)
 {
     //
     // Loop while there are more characters to send.
     //
-    while(ui32Count--)
+//    while(ui32Count--)
     {
         //
-        // Write the next character to the UART.
+        // Write the character to the UART.
         //
-        ROM_UARTCharPut(UART1_BASE, *pui8Buffer++);
+        ROM_UARTCharPut(UART1_BASE, c);
         // ROM_UARTCharPutNonBlocking(UART1_BASE, *pui8Buffer++); -- this chops off chars if buffer gets full
     }
 }
