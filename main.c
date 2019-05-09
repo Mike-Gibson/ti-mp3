@@ -224,16 +224,20 @@ UART1IntHandler(void)
     //
     // Get the interrupt status.
     //
-    ui32Status = ROM_UARTIntStatus(UART1_BASE, true);
+    ui32Status = ROM_UARTIntStatus(UART3_BASE, true);
+
+    uint32_t ui32Status2 = ROM_UARTIntStatus(UART3_BASE, false);
+    uint32_t isTx = ui32Status2 & UART_INT_TX;
+    uint32_t isRx = ui32Status2 & UART_INT_RX;
 
     //
     // Clear the asserted interrupts.
     //
-    ROM_UARTIntClear(UART1_BASE, ui32Status);
+    ROM_UARTIntClear(UART3_BASE, ui32Status);
 
     bool haveWrittenHeader = false;
 
-    while(ROM_UARTCharsAvail(UART1_BASE))
+    while(ROM_UARTCharsAvail(UART3_BASE))
     {
         if (!haveWrittenHeader) {
             UARTSend((uint8_t *)"\r\nReceived: ", 12);
@@ -243,7 +247,7 @@ UART1IntHandler(void)
         //
         // Read the next character from the UART.
         //
-        uint8_t a = ROM_UARTCharGetNonBlocking(UART1_BASE);
+        uint8_t a = ROM_UARTCharGetNonBlocking(UART3_BASE);
 
         char asHexString[2];
         ConvertByteToHexString(a, asHexString);
@@ -336,8 +340,8 @@ UARTSend_1(const uint8_t c)
         //
         // Write the character to the UART.
         //
-        //ROM_UARTCharPut(UART1_BASE, c);
-        ROM_UARTCharPutNonBlocking(UART1_BASE, c); // this chops off chars if buffer gets full
+        //ROM_UARTCharPut(UART3_BASE, c);
+        ROM_UARTCharPutNonBlocking(UART3_BASE, c); // this chops off chars if buffer gets full
     }
 
     // wait a while?
@@ -431,8 +435,8 @@ int main(void)
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
-    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
-    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART3);
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
 
     //
     // Enable processor interrupts.
@@ -446,13 +450,20 @@ int main(void)
     GPIOPinConfigure(GPIO_PA1_U0TX);
     ROM_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
+//    //
+//    // Set GPIO PB0 and PB1 as UART pins.
+//    //
+//    GPIOPinConfigure(GPIO_PB0_U1RX);
+//    GPIOPinConfigure(GPIO_PB1_U1TX);
+//    ROM_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0);
+//    ROM_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_1);
+
     //
-    // Set GPIO PB0 and PB1 as UART pins.
+    // Set GPIO ... as UART pins.
     //
-    GPIOPinConfigure(GPIO_PB0_U1RX);
-    GPIOPinConfigure(GPIO_PB1_U1TX);
-    ROM_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0);
-    ROM_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_1);
+    GPIOPinConfigure(GPIO_PC6_U3RX);
+    GPIOPinConfigure(GPIO_PC7_U3TX);
+    GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_6 | GPIO_PIN_7);
 
     //
     // Configure the UART0 for 115,200, 8-N-1 operation.
@@ -462,9 +473,9 @@ int main(void)
                              UART_CONFIG_PAR_NONE));
 
     //
-    // Configure the UART1 for 9600,  8-N-1 operation.
+    // Configure the UART3 for 9600,  8-N-1 operation.
     //
-    ROM_UARTConfigSetExpClk(UART1_BASE, ROM_SysCtlClockGet(), 9600,
+    ROM_UARTConfigSetExpClk(UART3_BASE, ROM_SysCtlClockGet(), 9600,
                             (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
                              UART_CONFIG_PAR_NONE));
 
@@ -475,9 +486,8 @@ int main(void)
     ROM_IntEnable(INT_UART0);
     ROM_UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
 
-    ROM_IntEnable(INT_UART1);
-    ROM_UARTIntEnable(UART1_BASE, UART_INT_RX);
-    // ROM_UARTIntEnable(UART1_BASE, UART_INT_RT);
+    ROM_IntEnable(INT_UART3);
+    ROM_UARTIntEnable(UART3_BASE, UART_INT_RX | UART_INT_RT);
 
     //
     // Prompt for text to be entered.
