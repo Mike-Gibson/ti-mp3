@@ -56,18 +56,25 @@ UARTIntHandler(void)
                 // http://www.electronicoscaldas.com/datasheet/DFR0299-DFPlayer-Mini-Manual.pdf
                 // $S VER Len CMD Feedback para1 para2 checksum $O
                 // 7E FF  06  09  00       00    02    FF DD    EF
-                UARTSend_1(0x7E);
-                UARTSend_1(0xFF);
-                UARTSend_1(0x06);
-                UARTSend_1(0x09);
-                UARTSend_1(0x01); // TEMP - get feedback?
-                UARTSend_1(0x00);
-                UARTSend_1(0x02);
+//                UARTSend_1(0x7E);
+//                UARTSend_1(0xFF);
+//                UARTSend_1(0x06);
+//                UARTSend_1(0x09);
+//                UARTSend_1(0x01); // TEMP - get feedback?
+//                UARTSend_1(0x00);
+//                UARTSend_1(0x02);
                 // 0 - VER - Len - CMD - Feedback - para1 - para2
 //                UARTSend_1(0xFE);  // NOT NEEDED?
 //                UARTSend_1(0xFF);  // NOT NEEDED?
-                UARTSend_1(0xEF);
+//                UARTSend_1(0xEF);
 
+                SendCommand(0x09, 0x00, 0x02);
+
+                break;
+
+            case 'r'  :
+                UARTSend((uint8_t *)"\r\nResetting...", 15);
+                SendCommand(0x0C, 0, 0);
                 break;
 
             case 'p'  :
@@ -76,15 +83,15 @@ UARTIntHandler(void)
 //                // http://www.electronicoscaldas.com/datasheet/DFR0299-DFPlayer-Mini-Manual.pdf
 //                // $S VER Len CMD Feedback para1 para2 checksum $O
 //                // 7E FF  06  0D  00       00    00    ?? ??    EF
-                UARTSend_1(0x7E);
-                UARTSend_1(0xFF);
-                UARTSend_1(0x06);
-                UARTSend_1(0x0D);
-                UARTSend_1(0x01); // TEMP - get feedback?
-                UARTSend_1(0x00);
-                UARTSend_1(0x00);
-                // UARTSend_1(0x????, 2); NOT NEEDED?
-                UARTSend_1(0xEF);
+//                UARTSend_1(0x7E);
+//                UARTSend_1(0xFF);
+//                UARTSend_1(0x06);
+//                UARTSend_1(0x0D);
+//                UARTSend_1(0x01); // TEMP - get feedback?
+//                UARTSend_1(0x00);
+//                UARTSend_1(0x00);
+//                // UARTSend_1(0x????, 2); NOT NEEDED?
+//                UARTSend_1(0xEF);
 
                 // Play 01/001.mp3
                 //
@@ -101,6 +108,9 @@ UARTIntHandler(void)
 //                UARTSend_1(0xFE);  // NOT NEEDED?
 //                UARTSend_1(0xE9);  // NOT NEEDED?
 //                UARTSend_1(0xEF);
+
+                // Play 01/001.mp3?
+                SendCommand(0x0F, 0x01, 0x01);
 
                 break;
 
@@ -169,7 +179,8 @@ UARTIntHandler(void)
                UARTSend((uint8_t *)"\r\nTESTING...", 12);
 
 //               UARTSend_1(0x7E);
-               UARTSend_1(0x05);
+               UARTSend_1(0xFA);
+               UARTSend_1(0x01);
 //               UARTSend_1(0xEF);
 
                break;
@@ -243,6 +254,30 @@ UART1IntHandler(void)
     }
 }
 
+void SendCommand(uint8_t command, uint8_t paramHigh, uint8_t paramLow) {
+    // http://www.electronicoscaldas.com/datasheet/DFR0299-DFPlayer-Mini-Manual.pdf
+    // $S VER Len CMD Feedback para1 para2 checksum $O
+    // 7E FF  06  09  00       00    02    FF DD    EF
+    uint8_t start = 0x7E;
+    uint8_t version = 0xFF;
+    uint8_t length = 0x06;
+    uint8_t feedback = 0x00;
+    uint16_t checksum = - (version + length + command + feedback + paramHigh + paramLow);
+    uint8_t end = 0xEF;
+
+    UARTSend_1(start);
+    UARTSend_1(version);
+    UARTSend_1(length);
+    UARTSend_1(command);
+    UARTSend_1(feedback);
+    UARTSend_1(paramHigh);
+    UARTSend_1(paramLow);
+    UARTSend_1((uint8_t)(checksum >> 8)); // High
+    UARTSend_1((uint8_t)(checksum));      // Low
+    UARTSend_1(end);
+
+}
+
 void ConvertByteToHexString(uint8_t input, uint8_t *output) {
     output[0] = 0;
     output[1] = 1;
@@ -301,8 +336,14 @@ UARTSend_1(const uint8_t c)
         //
         // Write the character to the UART.
         //
-        ROM_UARTCharPut(UART1_BASE, c);
-        // ROM_UARTCharPutNonBlocking(UART1_BASE, *pui8Buffer++); -- this chops off chars if buffer gets full
+        //ROM_UARTCharPut(UART1_BASE, c);
+        ROM_UARTCharPutNonBlocking(UART1_BASE, c); // this chops off chars if buffer gets full
+    }
+
+    // wait a while?
+    uint8_t count = 250;
+    while(count--) {
+        // Do nothing
     }
 }
 
