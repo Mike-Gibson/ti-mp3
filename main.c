@@ -451,7 +451,8 @@ int main(void)
     //
     GPIOPinConfigure(GPIO_PB0_U1RX);
     GPIOPinConfigure(GPIO_PB1_U1TX);
-    ROM_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+    ROM_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0);
+    ROM_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_1);
 
     //
     // Configure the UART0 for 115,200, 8-N-1 operation.
@@ -475,7 +476,8 @@ int main(void)
     ROM_UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
 
     ROM_IntEnable(INT_UART1);
-    ROM_UARTIntEnable(UART1_BASE, UART_INT_RX | UART_INT_RT);
+    ROM_UARTIntEnable(UART1_BASE, UART_INT_RX);
+    // ROM_UARTIntEnable(UART1_BASE, UART_INT_RT);
 
     //
     // Prompt for text to be entered.
